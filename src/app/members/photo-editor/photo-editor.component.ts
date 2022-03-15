@@ -5,7 +5,6 @@ import { Member } from 'src/app/_models/member';
 import { User } from 'src/app/_models/user';
 import { AccountService } from 'src/app/_services/account.service';
 import { environment } from 'src/environments/environment';
-import { fileURLToPath } from 'url';
 
 @Component({
   selector: 'app-photo-editor',
@@ -15,20 +14,22 @@ import { fileURLToPath } from 'url';
 export class PhotoEditorComponent implements OnInit {
   @Input() member: Member;
   uploader: FileUploader;
-  hasBaseDropzoneOver = false;
+  hasBaseDropZoneOver = false;
   baseUrl = environment.apiUrl;
   user: User;
 
   constructor(private accountService: AccountService) {
     this.accountService.currentUser$
       .pipe(take(1))
-      .subscribe((user) => (this.user = user));
+      .subscribe(user => this.user = user);
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.initializeFileUploader();
+  }
 
   fileOverBase(e: any): void {
-    this.hasBaseDropzoneOver = e;
+    this.hasBaseDropZoneOver = e;
   }
 
   initializeFileUploader(): void {
