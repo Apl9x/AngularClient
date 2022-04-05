@@ -21,7 +21,7 @@ export class MembersService {
 
   constructor(private http: HttpClient) {}
 
-  getMembers(page?: number,itemsPerPage?: number): Observable<Member[]> {
+  getMembers(page?: number,itemsPerPage?: number): Observable<PaginatedResult<Member[]>> {
     let params = new HttpParams();
     
     if(page!=null && itemsPerPage!=null){
@@ -29,8 +29,14 @@ export class MembersService {
       params = params.append("pageSize",itemsPerPage.toString());
     }
 
-    return this.http.get<Member[]>(this.baseUrl + 'users').pipe(
-     
+    return this.http.get<Member[]>(this.baseUrl + 'users',{observe: "response", params}).pipe(
+     map(response=>{
+       this.paginatedResult.result = response.body;
+       if(response.headers.get("Pagination") !== null){
+         this.paginatedResult.pagination = JSON.parse(response.headers.get("Pagination"));
+       }
+       return this.paginatedResult;
+     })
     );
   }
 
