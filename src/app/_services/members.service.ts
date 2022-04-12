@@ -1,12 +1,14 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { of, map, Observable } from 'rxjs';
+import { of, map, Observable, take } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Member } from '../_models/member';
 import { PaginatedResult } from '../_models/pagination';
+import { User } from '../_models/user';
 import { UserParams } from '../_models/userParams';
+import { AccountService } from './account.service';
 
-// const httpOptions={
+// const httpOptions = {
 //   headers: new HttpHeaders({
 //     Authorization: "Bearer " + JSON.parse(localStorage.getItem("user"))?.token
 //   })
@@ -19,8 +21,30 @@ export class MembersService {
   baseUrl = environment.apiUrl;
   members: Member[] = [];
   memberCache = new Map();
+  user: User;
+  userParams: UserParams;
 
-  constructor(private http: HttpClient) {}
+  paginatedResult: PaginatedResult<Member[]> = new PaginatedResult<Member[]>();
+
+  constructor(private http: HttpClient, private accountService: AccountService) {
+    this.accountService.currentUser$.pipe(take(1)).subscribe(user => {
+      this.user = user;
+      this.userParams = new UserParams(user);
+    });
+  }
+
+  getUserParams(): UserParams{
+    return this.userParams;
+  }
+  
+  setUserParams(params: UserParams): void{
+    this.userParams = params;
+  }
+
+  resetUserParams(): UserParams{
+    this.userParams = new UserParams(this.user);
+    return this.userParams;
+  }
 
   getMembers(userParams: UserParams): Observable<PaginatedResult<Member[]>> {
     var response = this.memberCache.get(Object.values(userParams).join('-'));
@@ -29,25 +53,31 @@ export class MembersService {
       return of(response);
     }
 
-    let params = this.getPaginationHeaders(userParams.pageNumber,userParams.pageSize);
+    let params = this.getPaginationHeaders(userParams.pageNumber, userParams.pageSize);
 
-    params = params.append("minAge",userParams.minAge.toString());
-    params = params.append("maxAge",userParams.maxAge.toString());
-    params = params.append("gender",userParams.gender);
-    params = params.append("orderBy",userParams.orderBy);
+    params = params.append("minAge", userParams.minAge.toString());
+    params = params.append("maxAge", userParams.maxAge.toString());
+    params = params.append("gender", userParams.gender);
+    params = params.append("orderBy", userParams.orderBy);
 
-    return this.getPaginatedResult<Member[]>(this.baseUrl + "users",params)
-    .pipe(map(response =>{
-      this.memberCache.set(Object.values(userParams).join('-'),response);
-      return response;
-    }));
+    return this.getPaginatedResult<Member []>(this.baseUrl + "users", params)
+      .pipe(map(response => {
+        this.memberCache.set(Object.values(userParams).join("-"), response);
+        return response;
+      }))
   }
 
-  getMember(username: string): Observable<Member> {
-    const member = [... this.memberCache.values()];
-    console.log(this.memberCache);
-    console.log(member);
 
+  getMember(username: string): Observable<Member> {
+    const member = [...this.memberCache.values()]
+      .reduce((arr, elem) => arr.concat(elem.result), [] )
+      .find((member: Member) => member.userName === username);
+    
+    if(member){
+      return of (member);
+    }
+
+    console.log(member)
     return this.http.get<Member>(this.baseUrl + 'users/' + username);
   }
 
@@ -60,12 +90,12 @@ export class MembersService {
     );
   }
 
-  setMainPhoto(photoId: number): Observable<Object>{
-    return this.http.put(this.baseUrl+"users/photos/"+photoId,{});
+  setMainPhoto(photoId: number): Observable<Object> {
+    return this.http.put(this.baseUrl + "users/photos/" + photoId, {})
   }
 
-  deletePhoto(photoId: number): Observable<Object>{
-    return this.http.delete(this.baseUrl+"users/photos/"+photoId);
+  deletePhoto(photoId: number): Observable<Object> {
+    return this.http.delete(this.baseUrl + "users/photos/" + photoId);
   }
 //#region [rgba(79,44,115,0.5)]
   private getPaginatedResult<T>(url:string, params: HttpParams): Observable<PaginatedResult<T>> {
