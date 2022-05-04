@@ -97,6 +97,15 @@ export class MembersService {
   deletePhoto(photoId: number): Observable<Object> {
     return this.http.delete(this.baseUrl + "users/photos/" + photoId);
   }
+
+  addLike(username: string): Observable<Object>{
+    return this.http.post(this.baseUrl + "likes/" + username,{});
+  }
+
+  getLikes(predicate: string): Observable<Member[]>{
+    return this.http.get<Partial<Member[]>>(this.baseUrl + "likes?predicate=" + predicate);
+
+  }
 //#region [rgba(79,44,115,0.5)]
   private getPaginatedResult<T>(url:string, params: HttpParams): Observable<PaginatedResult<T>> {
     const paginatedResult: PaginatedResult<T> = new PaginatedResult<T>();
