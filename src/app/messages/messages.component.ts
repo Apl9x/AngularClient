@@ -21,7 +21,7 @@ export class MessagesComponent implements OnInit {
     this.loadMessages();
   }
 
-  loadMessages(){
+  loadMessages(): void{
     this.messageService.getMessages(this.pageNumber, this.pageSize,this.container).subscribe(response=>{
       this.messages = response.result;
       this.pagination = response.pagination;
@@ -29,7 +29,7 @@ export class MessagesComponent implements OnInit {
   }
 
   pageChanged(event: any):void{
-    if(this.pageNumber != event.page){
+    if(this.pageNumber !== event.page){
       this.pageNumber = event.page;
       this.loadMessages();
     }
